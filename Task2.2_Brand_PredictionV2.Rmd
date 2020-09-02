@@ -1,0 +1,108 @@
+---
+title: "Brand Prediction for Blackwell Inc."
+output: 
+  html_document:
+    theme: cerulean
+    highlight: tango
+    toc: true
+    toc_float: true
+    df_print: kable
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+In this project I was asked to predict the customers’s brand preferences that were missing from an incomplete survey using two classifiers (C5.0 or RandomForest)
+
+```{r}
+#open the libraries
+library(dplyr)
+library(ggplot2)
+library(caret)
+```
+
+```{r}
+#load the data sets
+CompleteData <- read.csv("C:/Users/Thomas S/Documents/Ubiqum/2. Data Analytics 2/2. Data Analytics 2/2. Classification/Task2.2_Brand_Prediction/CompleteResponses.csv")
+
+IncompleteData <- read.csv("C:/Users/Thomas S/Documents/Ubiqum/2. Data Analytics 2/2. Data Analytics 2/2. Classification/Task2.2_Brand_Prediction/SurveyIncomplete.csv")
+```
+
+
+### 1 Data Overview 
+```{r}
+#take a look at the data sets
+summary(CompleteData)
+summary(IncompleteData)
+glimpse(CompleteData)
+glimpse(IncompleteData)
+```
+
+### 2 Datatype Conversion
+```{r}
+#renaming brand from numeric to String
+CompleteData$brand_name <- apply(CompleteData["brand"],
+                            MARGIN = 2,
+                            function(x) if_else(x==0, "Acer", "Sony"))
+#CompleteData
+```
+
+```{r}
+#transforming (non-numeric) variables to factors from IncompleteData(set)
+categ_var <- c("elevel","car","zipcode","brand_name")
+CompleteData[categ_var] <- lapply(CompleteData[categ_var], as.factor)
+
+#chechink data transformation
+glimpse(CompleteData)
+```
+
+```{r}
+IncompleteData$brand_name <- apply(IncompleteData["brand"],
+                              MARGIN = 2,
+                              function(x) if_else (x==0, "Acer", "Sony"))
+IncompleteData[categ_var] <- lapply(IncompleteData[categ_var], as.factor)
+glimpse(IncompleteData)
+```
+
+```{r}
+#brand preferences (basic: absolut)
+table(CompleteData$brand_name, dnn = c("Brand"))
+# brand preferences (basic: relative)
+round(prop.table(table(CompleteData$brand_name, dnn = c("Brand"))),2)
+```
+
+```{r}
+set.seed(123)
+
+#train and test
+train_CD <-createDataPartition(y= CompleteData$brand,
+                               p=0.75,
+                               list = F)
+train <- CompleteData[train_CD,]
+test <- CompleteData [-train_CD,]
+```
+
+```{r}
+# cross validation
+ctrl <- trainControl(method = "repeatedcv",
+                     repeats = 5,
+                     number = 3)
+```
+
+```{r}
+#Creating the model & applying it
+Model_caret_dt <- caret::train(brand_name ~ .,
+                               data = train %>% dplyr::select(-brand),
+                               method = "rpart",
+                               trControl = ctrl)
+Model_caret_dt
+```
+
+
+
+
+
+
+
